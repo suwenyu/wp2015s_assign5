@@ -6,20 +6,88 @@ var skycons = new Skycons();
   // on Android, a nasty hack is needed: {"resizeClear": true}
 
   // you can add a canvas by it's ID...
-  skycons.add("today", Skycons.PARTLY_CLOUDY_DAY);
-  skycons.add("day1", Skycons.CLEAR_DAY);
-  skycons.add("day2", Skycons.CLOUDY);
-  skycons.add("day3", Skycons.RAIN);
+  // skycons.add("today", Skycons.PARTLY_CLOUDY_DAY);
+  // skycons.add("day1", Skycons.CLEAR_DAY);
+  // skycons.add("day2", Skycons.CLOUDY);
+  // skycons.add("day3", Skycons.RAIN);
 
   // start animation!
   skycons.play();
   
   // want to change the icon? no problem:
-  skycons.set("today", Skycons.PARTLY_CLOUDY_NIGHT);
+  // skycons.set("today", Skycons.PARTLY_CLOUDY_NIGHT);
   
 /*
 Get value from Bootstrap dropdown menu
 */
 $('#dropdown li').on('click', function(){
     alert($(this).text());
+    $('button').text($(this).text());
+         city_judge($(this).attr("id"));
 });
+
+var skycons_state = function(date,status){
+
+    if(status.search("Sunny") >= 0){
+      skycons.set(date, Skycons.CLEAR_DAY);
+    }
+
+    else if(status.search("Clear") >= 0){
+      skycons.set(date, Skycons.CLEAR_NIGHT);
+    }
+
+    else if(status.search("Cloudy") >= 0){
+      skycons.set(date, Skycons.CLOUDY);
+    }
+
+    else if(status.search("Rain") >= 0){
+      skycons.set(date, Skycons.RAIN);
+    }
+
+    else if(status.search("Shower") >= 0){
+      skycons.set(date, Skycons.RAIN);
+    }
+    else if(status.search("Windy") >= 0){
+      skycons.set(date, Skycons.WIND);
+    }
+    else if(status.search("Snow") >= 0){
+      skycons.set(date, Skycons.SNOW);
+    }
+
+    else if(status.search("Foggy") >= 0){
+      skycons.set(date, Skycons.FOG);
+    }
+}
+
+var CtoF = function(t) {
+     return Math.round(((t - 32) * 5) / 9);
+ }
+
+
+var city_judge = function(city){
+
+$.getJSON(
+  'https://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20weather.forecast%20where%20woeid%20in%20(select%20woeid%20from%20geo.places(1)%20where%20text%3D"' + city + '")&format=json&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys', {},
+
+    function(data, cond){
+          
+          console.log('data',data);
+          $('.temperature').text(CtoF(data.query.results.channel.item.condition.temp));
+          $('.date').text(data.query.results.channel.item.forecast[0].date);
+          $('.cond').text(':' + data.query.results.channel.item.condition.text); //condition
+          
+          //forecast temp
+          $("thead > tr >th:nth-child(1)").text(data.query.results.channel.item.forecast[1].date);
+          $(".temp-fore > td:nth-child(1)").text(CtoF(data.query.results.channel.item.forecast[1].low)+ '~' + CtoF(data.query.results.channel.item.forecast[1].high) + "℃"); 
+          $("thead > tr >th:nth-child(2)").text(data.query.results.channel.item.forecast[2].date);
+          $(".temp-fore > td:nth-child(2)").text(CtoF(data.query.results.channel.item.forecast[2].low) + '~' + CtoF(data.query.results.channel.item.forecast[2].high) + "℃"); 
+          $("thead > tr >th:nth-child(3)").text(data.query.results.channel.item.forecast[3].date);
+          $(".temp-fore > td:nth-child(3)").text(CtoF(data.query.results.channel.item.forecast[3].low) + '~' + CtoF(data.query.results.channel.item.forecast[3].high) + "℃"); 
+
+          skycons_state("today",data.query.results.channel.item.condition.text);
+          skycons_state("day1",data.query.results.channel.item.forecast[1].text);
+          skycons_state("day2",data.query.results.channel.item.forecast[2].text);
+          skycons_state("day3",data.query.results.channel.item.forecast[3].text);    
+        }
+    );
+};
